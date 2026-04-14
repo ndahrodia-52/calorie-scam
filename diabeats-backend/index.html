@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>DiaBEATS – Smart Nutrition for Diabetics</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #1D9E75;
+      --green-light: #E1F5EE;
+      --green-dark: #085041;
+      --amber: #BA7517;
+      --amber-light: #FAEEDA;
+      --red: #E24B4A;
+      --red-light: #FCEBEB;
+      --teal: #0F6E56;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --bg: #ffffff;
+      --bg2: #f5f5f3;
+      --text: #1a1a1a;
+      --text2: #666;
+      --border: rgba(0,0,0,0.12);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --bg2: #252525;
+        --text: #f0f0f0;
+        --text2: #aaa;
+        --border: rgba(255,255,255,0.12);
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg2);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px 0;
+    }
+    #diabeats-app {
+      width: 100%;
+      max-width: 390px;
+      min-height: 100vh;
+      background: var(--bg);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .screen { display: none; flex-direction: column; flex: 1; }
+    .screen.active { display: flex; }
+    .status-bar {
+      background: var(--green);
+      padding: 14px 20px 18px;
+      color: white;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .status-bar .app-name {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    .status-bar .app-sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+    .lang-toggle {
+      position: absolute; top: 14px; right: 16px;
+      background: rgba(255,255,255,0.2); border: none;
+      border-radius: 20px; color: white; font-size: 12px;
+      font-family: 'DM Sans', sans-serif; padding: 4px 10px; cursor: pointer;
+    }
+    .scroll-content { flex: 1; overflow-y: auto; padding: 16px; }
+    .section-label {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text2); margin-bottom: 10px;
+    }
+    .scan-card {
+      background: var(--green); border-radius: var(--radius);
+      padding: 20px; color: white; margin-bottom: 14px;
+      cursor: pointer; transition: transform 0.15s; position: relative; overflow: hidden;
+    }
+    .scan-card:active { transform: scale(0.98); }
+    .scan-card::after {
+      content: ''; position: absolute; width: 140px; height: 140px;
+      border-radius: 50%; background: rgba(255,255,255,0.07); right: -30px; top: -40px;
+    }
+    .scan-card .scan-icon {
+      width: 52px; height: 52px; background: rgba(255,255,255,0.2);
+      border-radius: 14px; display: flex; align-items: center;
+      justify-content: center; font-size: 24px; margin-bottom: 12px;
+    }
+    .scan-card h3 { font-size: 17px; font-weight: 600; }
+    .scan-card p { font-size: 13px; opacity: 0.8; margin-top: 4px; }
+    .voice-card {
+      background: var(--amber-light); border: 0.5px solid #FAC775;
+      border-radius: var(--radius); padding: 16px; cursor: pointer;
+      display: flex; align-items: center; gap: 14px; margin-bottom: 16px;
+      transition: transform 0.15s;
+    }
+    .voice-card:active { transform: scale(0.98); }
+    .voice-card .voice-icon {
+      width: 44px; height: 44px; background: #FAC775; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+    }
+    .voice-card h3 { font-size: 14px; font-weight: 500; color: var(--text); }
+    .voice-card p { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .stat-box { background: var(--bg2); border-radius: var(--radius-sm); padding: 12px 10px; text-align: center; }
+    .stat-box .val { font-size: 20px; font-weight: 600; color: var(--text); }
+    .stat-box .lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+    .meal-hist-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 0.5px solid var(--border);
+    }
+    .meal-hist-item:last-child { border-bottom: none; }
+    .meal-hist-item .meal-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--green-light); display: flex; align-items: center;
+      justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .meal-hist-item .meal-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .meal-hist-item .meal-time { font-size: 11px; color: var(--text2); }
+    .meal-hist-item .meal-kcal { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--green); }
+    .bottom-nav {
+      display: flex; background: var(--bg);
+      border-top: 0.5px solid var(--border); padding: 10px 0 6px; flex-shrink: 0;
+    }
+    .nav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; background: none; border: none; cursor: pointer; padding: 4px 0;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .nav-btn .nav-icon { font-size: 18px; }
+    .nav-btn .nav-lbl { font-size: 10px; color: var(--text2); }
+    .nav-btn.active .nav-lbl { color: var(--green); font-weight: 500; }
+    .screen-header {
+      padding: 16px 20px 12px; border-bottom: 0.5px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0; background: var(--bg);
+    }
+    .screen-header h2 { font-size: 17px; font-weight: 600; color: var(--text); }
+    .back-btn { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--text); padding: 0; }
+    .camera-area {
+      background: #0a0a0a; margin: 16px; border-radius: var(--radius);
+      height: 240px; display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 10px; position: relative; overflow: hidden; flex-shrink: 0;
+    }
+    .camera-area video { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
+    .camera-overlay {
+      position: absolute; inset: 0; display: flex;
+      align-items: center; justify-content: center; flex-direction: column; gap: 8px;
+    }
+    .viewfinder {
+      width: 160px; height: 160px; border: 2px solid rgba(255,255,255,0.6);
+      border-radius: 16px; position: relative;
+    }
+    .viewfinder::before, .viewfinder::after {
+      content: ''; position: absolute; width: 20px; height: 20px;
+      border-color: var(--green); border-style: solid;
+    }
+    .viewfinder::before { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .viewfinder::after { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+    .camera-hint { color: rgba(255,255,255,0.7); font-size: 12px; }
+    .cam-actions { display: flex; gap: 10px; padding: 0 16px 12px; flex-shrink: 0; }
+    .btn-primary {
+      flex: 1; background: var(--green); color: white; border: none;
+      border-radius: 12px; padding: 14px; font-size: 14px; font-weight: 500;
+      font-family: 'DM Sans', sans-serif; cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn-primary:active { opacity: 0.85; }
+    .btn-secondary {
+      flex: 1; background: var(--bg2); color: var(--text);
+      border: 0.5px solid var(--border); border-radius: 12px; padding: 14px;
+      font-size: 14px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer;
+    }
+    .result-card {
+      background: var(--bg); border: 0.5px solid var(--border);
+      border-radius: var(--radius); padding: 16px; margin: 0 16px 12px;
+    }
+    .result-card .meal-title {
+      font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600;
+      margin-bottom: 4px; color: var(--text);
+    }
+    .result-card .confidence { font-size: 12px; color: var(--green); font-weight: 500; margin-bottom: 14px; }
+    .kcal-big {
+      background: var(--green-light); border-radius: 10px;
+      padding: 12px; text-align: center; margin-bottom: 12px;
+    }
+    .kcal-big .kcal-num { font-size: 36px; font-weight: 600; color: var(--green-dark); }
+    .kcal-big .kcal-lbl { font-size: 12px; color: var(--teal); margin-top: 2px; }
+    .nutrients-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .nutrient-item { background: var(--bg2); border-radius: 8px; padding: 10px 12px; }
+    .nutrient-item .n-label { font-size: 11px; color: var(--text2); }
+    .nutrient-item .n-val { font-size: 15px; font-weight: 500; color: var(--text); margin-top: 2px; }
+    .diabetes-alert {
+      border-radius: 10px; padding: 12px; margin: 0 16px 12px;
+      font-size: 13px; line-height: 1.5;
+    }
+    .diabetes-alert.warn { background: var(--amber-light); border: 0.5px solid #FAC775; color: #633806; }
+    .diabetes-alert.good { background: var(--green-light); border: 0.5px solid #9FE1CB; color: var(--green-dark); }
+    .diabetes-alert.alert { background: var(--red-light); border: 0.5px solid #F7C1C1; color: #501313; }
+    .voice-screen-content { padding: 16px; flex: 1; overflow-y: auto; }
+    .mic-button {
+      width: 80px; height: 80px; border-radius: 50%; background: var(--green);
+      border: none; color: white; font-size: 30px; display: flex;
+      align-items: center; justify-content: center; cursor: pointer;
+      margin: 20px auto; transition: transform 0.15s;
+    }
+    .mic-button.recording { background: var(--red); animation: pulse-ring 1.5s infinite; }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(226,75,74,0.4); }
+      70% { box-shadow: 0 0 0 16px rgba(226,75,74,0); }
+      100% { box-shadow: 0 0 0 0 rgba(226,75,74,0); }
+    }
+    .transcription-box {
+      background: var(--bg2); border-radius: var(--radius-sm); padding: 14px;
+      font-size: 14px; color: var(--text2); min-height: 80px; margin-bottom: 14px;
+      line-height: 1.6; font-style: italic;
+    }
+    .transcription-box.has-text { color: var(--text); font-style: normal; }
+    .rec-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
+    .rec-card-header { background: var(--green-light); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+    .rec-card-header .rec-icon { font-size: 22px; }
+    .rec-card-header h3 { font-size: 14px; font-weight: 600; color: var(--green-dark); }
+    .rec-card-header .rec-kcal { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--green); }
+    .rec-card-body { padding: 14px 16px; }
+    .rec-card-body p { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 10px; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; background: var(--green-light); color: var(--teal); font-weight: 500; }
+    .tag.warn { background: var(--amber-light); color: #633806; }
+    .history-section { padding: 16px; flex: 1; overflow-y: auto; }
+    .daily-summary { background: var(--green); border-radius: var(--radius); padding: 16px; color: white; margin-bottom: 16px; }
+    .daily-summary h3 { font-size: 13px; opacity: 0.8; margin-bottom: 8px; }
+    .daily-summary .d-val { font-size: 28px; font-weight: 600; }
+    .daily-summary .d-sub { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+    .progress-bar { background: rgba(255,255,255,0.25); border-radius: 6px; height: 8px; margin-top: 12px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 6px; background: white; width: 68%; }
+    .progress-label { font-size: 11px; opacity: 0.7; margin-top: 5px; }
+    .loading-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55); align-items: center;
+      justify-content: center; flex-direction: column; gap: 12px; z-index: 200;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+      width: 44px; height: 44px; border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: white; font-size: 14px; }
+    textarea {
+      width: 100%; border: 0.5px solid var(--border); border-radius: 10px;
+      padding: 10px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+      background: var(--bg2); color: var(--text); resize: none; height: 70px;
+    }
+    .api-key-banner {
+      background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px;
+      padding: 12px 14px; margin: 12px 16px; font-size: 13px; color: #5a3e00; line-height: 1.5;
+    }
+    .api-key-banner input {
+      width: 100%; margin-top: 8px; padding: 8px 10px; font-size: 13px;
+      border: 1px solid #ffc107; border-radius: 8px; font-family: 'DM Sans', sans-serif;
+      background: white; color: #333; height: auto;
+    }
+    .api-key-banner button {
+      margin-top: 6px; padding: 6px 14px; background: var(--green); color: white;
+      border: none; border-radius: 8px; font-size: 13px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+  </style>
+</head>
+<body>
+<div id="diabeats-app">
+
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">Analyzing meal...</div>
+  </div>
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div class="status-bar">
+      <div class="app-name">DiaBEATS</div>
+      <div class="app-sub" data-key="home_sub">Your smart nutrition companion</div>
+      <button class="lang-toggle" onclick="toggleLang()">FR / EN</button>
+    </div>
+    <div class="scroll-content">
+      <div id="api-key-banner" class="api-key-banner">
+        ⚠️ <strong>API Key required.</strong> Enter your Anthropic API key to enable AI analysis.
+        <input type="password" id="api-key-input" placeholder="sk-ant-..." />
+        <button onclick="saveApiKey()">Save Key</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="val">1,240</div><div class="lbl" data-key="kcal_today">kcal today</div></div>
+        <div class="stat-box"><div class="val">42g</div><div class="lbl" data-key="carbs">Carbs</div></div>
+        <div class="stat-box"><div class="val">3</div><div class="lbl" data-key="meals">Meals</div></div>
+      </div>
+      <p class="section-label" data-key="scan_meal">Scan your meal</p>
+      <div class="scan-card" onclick="goScreen('screen-scanner')">
+        <div class="scan-icon">📷</div>
+        <h3 data-key="scan_title">Scan with Camera</h3>
+        <p data-key="scan_desc">Point at your plate for instant nutrition analysis</p>
+      </div>
+      <div class="voice-card" onclick="goScreen('screen-voice')">
+        <div class="voice-icon">🎙️</div>
+        <div>
+          <h3 data-key="voice_title">Describe your meal</h3>
+          <p data-key="voice_desc">Can't scan? List ingredients by voice</p>
+        </div>
+      </div>
+      <p class="section-label" data-key="recent">Recent meals</p>
+      <div class="meal-hist-item">
+        <div class="meal-icon">🥗</div>
+        <div><div class="meal-name">Salade Niçoise</div><div class="meal-time" data-key="lunch">Lunch · 12:30</div></div>
+        <div class="meal-kcal">310 kcal</div>
+      </div>
+      <div class="meal-hist-item">
+        <div class="meal-icon">🍳</div>
+        <div><div class="meal-name" data-key="eggs_tomatoes">Eggs & Tomatoes</div><div class="meal-time" data-key="breakfast">Breakfast · 7:45</div></div>
+        <div class="meal-kcal">220 kcal</div>
+      </div>
+      <div class="meal-hist-item">
+        <div class="meal-icon">🥜</div>
+        <div><div class="meal-name" data-key="groundnut_soup">Groundnut Soup + Rice</div><div class="meal-time" data-key="yesterday">Yesterday · 19:00</div></div>
+        <div class="meal-kcal">540 kcal</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-btn active" onclick="switchTab(0)"><div class="nav-icon">🏠</div><div class="nav-lbl" data-key="nav_home">Home</div></button>
+      <button class="nav-btn" onclick="switchTab(1)"><div class="nav-icon">📷</div><div class="nav-lbl" data-key="nav_scan">Scan</div></button>
+      <button class="nav-btn" onclick="switchTab(2)"><div class="nav-icon">🥦</div><div class="nav-lbl" data-key="nav_meals">Meals</div></button>
+      <button class="nav-btn" onclick="switchTab(3)"><div class="nav-icon">📊</div><div class="nav-lbl" data-key="nav_tracker">Tracker</div></button>
+    </div>
+  </div>
+
+  <!-- SCANNER SCREEN -->
+  <div id="screen-scanner" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="goScreen('screen-home')">←</button>
+      <h2 data-key="scan_title">Scan with Camera</h2>
+    </div>
+    <div class="camera-area" id="camera-area">
+      <video id="video-feed" autoplay playsinline style="display:none"></video>
+      <div class="camera-overlay" id="cam-overlay">
+        <div class="viewfinder"></div>
+        <div class="camera-hint" data-key="frame_meal">Frame your meal</div>
+      </div>
+    </div>
+    <div class="cam-actions">
+      <button class="btn-primary" id="cam-btn" onclick="handleCamBtn()">📷 <span data-key="open_camera">Open Camera</span></button>
+      <button class="btn-secondary" onclick="useDemo()">🖼️ <span data-key="use_demo">Demo</span></button>
+    </div>
+    <div id="scan-result-area" style="flex:1;overflow-y:auto;"></div>
+  </div>
+
+  <!-- VOICE SCREEN -->
+  <div id="screen-voice" class="screen">
+    <div class="screen-header">
+      <button class="back-btn" onclick="goScreen('screen-home')">←</button>
+      <h2 data-key="voice_title">Describe your meal</h2>
+    </div>
+    <div class="voice-screen-content">
+      <p style="font-size:13px;color:var(--text2);text-align:center;margin-bottom:8px;" data-key="voice_instructions">Tap the microphone and list all ingredients used</p>
+      <button class="mic-button" id="mic-btn" onclick="toggleRecording()">🎙️</button>
+      <div class="transcription-box" id="transcription-box" data-key="tap_to_start">Tap the microphone to start...</div>
+      <div id="manual-input-area">
+        <p style="font-size:12px;color:var(--text2);margin-bottom:6px;" data-key="or_type">Or type your ingredients:</p>
+        <textarea id="ingredient-input" placeholder="e.g. rice 200g, chicken 150g, palm oil 1 tbsp..."></textarea>
+        <button class="btn-primary" style="margin-top:8px;width:100%;" onclick="analyzeVoice()">🔍 <span data-key="analyze">Analyze Nutrition</span></button>
+      </div>
+      <div id="voice-result-area" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
+  <!-- MEALS SCREEN -->
+  <div id="screen-meals" class="screen">
+    <div class="status-bar" style="position:relative">
+      <div class="app-name" style="font-size:18px;" data-key="recommended_meals">Recommended Meals</div>
+      <div class="app-sub" data-key="meals_sub">Diabetes-friendly options</div>
+      <button class="lang-toggle" onclick="toggleLang()">FR / EN</button>
+    </div>
+    <div class="scroll-content" id="meals-list"></div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="switchTab(0)"><div class="nav-icon">🏠</div><div class="nav-lbl" data-key="nav_home">Home</div></button>
+      <button class="nav-btn" onclick="switchTab(1)"><div class="nav-icon">📷</div><div class="nav-lbl" data-key="nav_scan">Scan</div></button>
+      <button class="nav-btn active" onclick="switchTab(2)"><div class="nav-icon">🥦</div><div class="nav-lbl" data-key="nav_meals">Meals</div></button>
+      <button class="nav-btn" onclick="switchTab(3)"><div class="nav-icon">📊</div><div class="nav-lbl" data-key="nav_tracker">Tracker</div></button>
+    </div>
+  </div>
+
+  <!-- TRACKER SCREEN -->
+  <div id="screen-tracker" class="screen">
+    <div class="status-bar" style="position:relative">
+      <div class="app-name" style="font-size:18px;" data-key="nav_tracker">Tracker</div>
+      <div class="app-sub" data-key="tracker_sub">Your daily nutrition log</div>
+      <button class="lang-toggle" onclick="toggleLang()">FR / EN</button>
+    </div>
+    <div class="history-section">
+      <div class="daily-summary">
+        <h3 data-key="today_intake">Today's intake</h3>
+        <div class="d-val">1,240 <span style="font-size:16px;font-weight:400;">kcal</span></div>
+        <div class="d-sub" data-key="goal_1800">Goal: 1,800 kcal</div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div class="progress-label">68% of daily goal</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box"><div class="val" style="font-size:16px;">42g</div><div class="lbl" data-key="carbs">Carbs</div></div>
+        <div class="stat-box"><div class="val" style="font-size:16px;">68g</div><div class="lbl" data-key="protein">Protein</div></div>
+        <div class="stat-box"><div class="val" style="font-size:16px;">38g</div><div class="lbl" data-key="fats">Fats</div></div>
+      </div>
+      <p class="section-label" style="margin-top:8px;" data-key="meal_log">Meal log</p>
+      <div class="meal-hist-item">
+        <div class="meal-icon">🍳</div>
+        <div><div class="meal-name" data-key="eggs_tomatoes">Eggs & Tomatoes</div><div class="meal-time" data-key="breakfast">Breakfast · 7:45</div></div>
+        <div class="meal-kcal">220 kcal</div>
+      </div>
+      <div class="meal-hist-item">
+        <div class="meal-icon">🥗</div>
+        <div><div class="meal-name">Salade Niçoise</div><div class="meal-time" data-key="lunch">Lunch · 12:30</div></div>
+        <div class="meal-kcal">310 kcal</div>
+      </div>
+      <div class="meal-hist-item">
+        <div class="meal-icon">🍎</div>
+        <div><div class="meal-name" data-key="apple_snack">Apple + Peanut Butter</div><div class="meal-time" data-key="snack">Snack · 15:00</div></div>
+        <div class="meal-kcal">190 kcal</div>
+      </div>
+      <div class="meal-hist-item">
+        <div class="meal-icon">🥘</div>
+        <div><div class="meal-name" data-key="fish_vegetables">Fish + Vegetables</div><div class="meal-time" data-key="dinner_est">Dinner · Estimated</div></div>
+        <div class="meal-kcal" style="color:var(--text2)">~520 kcal</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <button class="nav-btn" onclick="switchTab(0)"><div class="nav-icon">🏠</div><div class="nav-lbl" data-key="nav_home">Home</div></button>
+      <button class="nav-btn" onclick="switchTab(1)"><div class="nav-icon">📷</div><div class="nav-lbl" data-key="nav_scan">Scan</div></button>
+      <button class="nav-btn" onclick="switchTab(2)"><div class="nav-icon">🥦</div><div class="nav-lbl" data-key="nav_meals">Meals</div></button>
+      <button class="nav-btn active" onclick="switchTab(3)"><div class="nav-icon">📊</div><div class="nav-lbl" data-key="nav_tracker">Tracker</div></button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ─── CONFIG ──────────────────────────────────────────────
+  // OPTION A: Paste your API key here (for local testing only)
+  const HARDCODED_API_KEY = '';
+  // ─────────────────────────────────────────────────────────
+
+  let lang = 'en';
+  let cameraActive = false;
+  let isRecording = false;
+  let recognition = null;
+  let currentTranscript = '';
+  let stream = null;
+
+  function getApiKey() {
+    return HARDCODED_API_KEY || localStorage.getItem('diabeats_api_key') || '';
+  }
+
+  function saveApiKey() {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (key) {
+      localStorage.setItem('diabeats_api_key', key);
+      document.getElementById('api-key-banner').style.display = 'none';
+      alert('API key saved!');
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    if (getApiKey()) {
+      document.getElementById('api-key-banner').style.display = 'none';
+    }
+    populateMeals();
+    applyLang();
+  });
+
+  const translations = {
+    en: {
+      kcal_today:'kcal today',carbs:'Carbs',meals:'Meals',scan_meal:'Scan your meal',
+      scan_title:'Scan with Camera',scan_desc:'Point at your plate for instant nutrition analysis',
+      voice_title:'Describe your meal',voice_desc:"Can't scan? List ingredients by voice",
+      recent:'Recent meals',lunch:'Lunch',breakfast:'Breakfast',eggs_tomatoes:'Eggs & Tomatoes',
+      groundnut_soup:'Groundnut Soup + Rice',yesterday:'Yesterday',nav_home:'Home',
+      nav_scan:'Scan',nav_meals:'Meals',nav_tracker:'Tracker',frame_meal:'Frame your meal',
+      open_camera:'Open Camera',use_demo:'Demo',
+      voice_instructions:'Tap the microphone and list all ingredients used',
+      tap_to_start:'Tap the microphone to start...',or_type:'Or type your ingredients:',
+      analyze:'Analyze Nutrition',recommended_meals:'Recommended Meals',
+      meals_sub:'Diabetes-friendly options',today_intake:"Today's intake",
+      goal_1800:'Goal: 1,800 kcal',protein:'Protein',fats:'Fats',meal_log:'Meal log',
+      apple_snack:'Apple + Peanut Butter',snack:'Snack',fish_vegetables:'Fish + Vegetables',
+      dinner_est:'Dinner · Estimated',tracker_sub:'Your daily nutrition log',
+      home_sub:'Your smart nutrition companion',analyzing:'Analyzing meal...'
+    },
+    fr: {
+      kcal_today:"kcal aujourd'hui",carbs:'Glucides',meals:'Repas',scan_meal:'Scannez votre repas',
+      scan_title:'Scanner avec la caméra',scan_desc:"Pointez votre assiette pour une analyse instantanée",
+      voice_title:'Décrivez votre repas',voice_desc:'Impossible de scanner ? Listez les ingrédients',
+      recent:'Repas récents',lunch:'Déjeuner',breakfast:'Petit-déjeuner',
+      eggs_tomatoes:'Oeufs & Tomates',groundnut_soup:"Soupe d'arachides + Riz",
+      yesterday:'Hier',nav_home:'Accueil',nav_scan:'Scanner',nav_meals:'Repas',
+      nav_tracker:'Suivi',frame_meal:'Cadrez votre repas',open_camera:'Ouvrir la caméra',
+      use_demo:'Démo',voice_instructions:'Appuyez sur le micro et listez tous les ingrédients',
+      tap_to_start:'Appuyez sur le micro pour commencer...',or_type:'Ou tapez vos ingrédients:',
+      analyze:'Analyser la nutrition',recommended_meals:'Repas recommandés',
+      meals_sub:'Options adaptées au diabète',today_intake:"Apport d'aujourd'hui",
+      goal_1800:'Objectif: 1 800 kcal',protein:'Protéines',fats:'Lipides',
+      meal_log:'Journal alimentaire',apple_snack:'Pomme + Beurre de cacahuète',
+      snack:'Collation',fish_vegetables:'Poisson + Légumes',
+      dinner_est:'Dîner · Estimé',tracker_sub:'Votre journal nutritionnel quotidien',
+      home_sub:'Votre compagnon nutrition intelligent',analyzing:'Analyse du repas...'
+    }
+  };
+
+  function t(key) { return (translations[lang]||{})[key] || (translations['en']||{})[key] || key; }
+
+  function applyLang() {
+    document.querySelectorAll('[data-key]').forEach(el => {
+      const k = el.getAttribute('data-key');
+      if (el.tagName === 'TEXTAREA') el.placeholder = t(k);
+      else el.textContent = t(k);
+    });
+  }
+
+  function toggleLang() { lang = lang === 'en' ? 'fr' : 'en'; applyLang(); populateMeals(); }
+  function goScreen(id) { document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+  function switchTab(n) {
+    const screens=['screen-home','screen-scanner','screen-meals','screen-tracker'];
+    goScreen(screens[n]);
+    document.querySelectorAll('.nav-btn').forEach((b,i)=>b.classList.toggle('active',i===n));
+  }
+  function showLoading(msg) { document.getElementById('loading-text').textContent=msg; document.getElementById('loading-overlay').classList.add('show'); }
+  function hideLoading() { document.getElementById('loading-overlay').classList.remove('show'); }
+
+  const systemPrompt = `You are a clinical nutrition AI specialized in diabetes management. 
+Return ONLY a raw JSON object — no markdown, no explanation. 
+Fields: meal_name (string), calories (number), carbohydrates_g (number), protein_g (number), 
+fat_g (number), fiber_g (number), glycemic_index (low/medium/high), sugar_g (number), 
+diabetes_advice (1-2 sentence string), safety_level (safe/caution/avoid), confidence_pct (0-100).
+Respond in the same language as the user input.`;
+
+  async function callClaude(messages) {
+    const key = getApiKey();
+    if (!key) { alert('Please enter your Anthropic API key first.'); return null; }
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: systemPrompt, messages })
+    });
+    const data = await resp.json();
+    if (data.error) { alert('API Error: ' + data.error.message); return null; }
+    const text = data.content.map(i=>i.text||'').join('');
+    try { return JSON.parse(text.replace(/```json|```/g,'').trim()); } catch(e) { return null; }
+  }
+
+  function renderResult(data, container) {
+    if (!data) { container.innerHTML='<p style="padding:16px;color:var(--text2)">Analysis failed. Please try again.</p>'; return; }
+    const cls = data.safety_level==='safe'?'good':data.safety_level==='caution'?'warn':'alert';
+    const ico = data.safety_level==='safe'?'✅':data.safety_level==='caution'?'⚠️':'🚫';
+    container.innerHTML = `
+      <div class="result-card">
+        <div class="meal-title">${data.meal_name}</div>
+        <div class="confidence">${lang==='fr'?'Confiance':'Confidence'}: ${Math.round(data.confidence_pct)}%</div>
+        <div class="kcal-big"><div class="kcal-num">${Math.round(data.calories)}</div><div class="kcal-lbl">kcal</div></div>
+        <div class="nutrients-grid">
+          <div class="nutrient-item"><div class="n-label">${t('carbs')}</div><div class="n-val">${Math.round(data.carbohydrates_g)}g</div></div>
+          <div class="nutrient-item"><div class="n-label">${t('protein')}</div><div class="n-val">${Math.round(data.protein_g)}g</div></div>
+          <div class="nutrient-item"><div class="n-label">${t('fats')}</div><div class="n-val">${Math.round(data.fat_g)}g</div></div>
+          <div class="nutrient-item"><div class="n-label">Fiber</div><div class="n-val">${Math.round(data.fiber_g)}g</div></div>
+          <div class="nutrient-item"><div class="n-label">Sugar</div><div class="n-val">${Math.round(data.sugar_g)}g</div></div>
+          <div class="nutrient-item"><div class="n-label">GI</div><div class="n-val">${data.glycemic_index}</div></div>
+        </div>
+      </div>
+      <div class="diabetes-alert ${cls}">${ico} ${data.diabetes_advice}</div>`;
+  }
+
+  async function useDemo() {
+    showLoading(t('analyzing'));
+    const prompt = lang==='fr' ? "Soupe d'arachides avec riz blanc, portion camerounaise typique" : 'Groundnut soup with white rice, typical Cameroonian portion';
+    const result = await callClaude([{role:'user',content:prompt}]);
+    hideLoading();
+    const area = document.getElementById('scan-result-area');
+    renderResult(result, area);
+    area.scrollIntoView({behavior:'smooth'});
+  }
+
+  async function handleCamBtn() {
+    if (!cameraActive) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+        const video = document.getElementById('video-feed');
+        video.srcObject = stream; video.style.display='block';
+        document.getElementById('cam-overlay').style.display='none';
+        cameraActive = true;
+        document.getElementById('cam-btn').innerHTML = '📸 Capture & Analyze';
+      } catch(e) { alert('Camera not available. Try the Demo button.'); }
+    } else {
+      const video = document.getElementById('video-feed');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      if (stream) stream.getTracks().forEach(t=>t.stop());
+      video.style.display='none';
+      document.getElementById('cam-overlay').style.display='flex';
+      cameraActive = false;
+      document.getElementById('cam-btn').innerHTML = '📷 Open Camera';
+      const imgData = canvas.toDataURL('image/jpeg',0.8).split(',')[1];
+      showLoading(t('analyzing'));
+      const prompt = lang==='fr' ? 'Analysez ce repas pour un patient diabétique.' : 'Analyze this meal for a diabetic patient.';
+      const result = await callClaude([{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imgData}},
+        {type:'text',text:prompt}
+      ]}]);
+      hideLoading();
+      const area = document.getElementById('scan-result-area');
+      renderResult(result, area);
+      area.scrollIntoView({behavior:'smooth'});
+    }
+  }
+
+  function toggleRecording() {
+    if (!isRecording) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { document.getElementById('transcription-box').textContent = lang==='fr'?'Reconnaissance vocale non disponible.':'Voice recognition not available. Please type below.'; return; }
+      recognition = new SR();
+      recognition.lang = lang==='fr'?'fr-FR':'en-US';
+      recognition.continuous = true; recognition.interimResults = true;
+      recognition.onresult = (e) => {
+        let final='',interim='';
+        for(let i=e.resultIndex;i<e.results.length;i++) {
+          if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+          else interim+=e.results[i][0].transcript;
+        }
+        currentTranscript+=final;
+        const box=document.getElementById('transcription-box');
+        box.textContent=currentTranscript+interim; box.className='transcription-box has-text';
+        document.getElementById('ingredient-input').value=box.textContent;
+      };
+      recognition.start(); isRecording=true;
+      document.getElementById('mic-btn').classList.add('recording');
+      document.getElementById('mic-btn').textContent='⏹️';
+    } else {
+      if(recognition) recognition.stop();
+      isRecording=false;
+      document.getElementById('mic-btn').classList.remove('recording');
+      document.getElementById('mic-btn').textContent='🎙️';
+    }
+  }
+
+  async function analyzeVoice() {
+    const input = document.getElementById('ingredient-input').value.trim();
+    if (!input) return;
+    showLoading(t('analyzing'));
+    const prompt = lang==='fr' ? `Analysez ces ingrédients pour un patient diabétique: ${input}` : `Analyze these ingredients for a diabetic patient: ${input}`;
+    const result = await callClaude([{role:'user',content:prompt}]);
+    hideLoading();
+    renderResult(result, document.getElementById('voice-result-area'));
+  }
+
+  const mealsData = {
+    en: [
+      {icon:'🥗',name:'Grilled Fish + Steamed Vegetables',kcal:310,tags:['Low GI','High Protein','Low Carb'],desc:'Lean protein with fiber-rich vegetables. Excellent blood sugar control.',safe:true},
+      {icon:'🍲',name:'Ndolé (Light Version)',kcal:380,tags:['Traditional','High Fiber','Moderate GI'],desc:'Bitter leaf stew rich in antioxidants. Use less palm oil for best results.',safe:true},
+      {icon:'🥜',name:'Bean Soup (no added sugar)',kcal:290,tags:['Low GI','High Fiber','Filling'],desc:'Legumes are ideal for diabetics — slow carb release and high fiber.',safe:true},
+      {icon:'🌿',name:'Sautéed Moringa + Eggs',kcal:220,tags:['Superfood','Low Carb','Anti-diabetic'],desc:'Moringa leaves help regulate blood sugar. Best for breakfast.',safe:true},
+      {icon:'⚠️',name:'White Rice + Sauce',kcal:520,tags:['High GI','Moderate'],desc:'Acceptable in small portions. Replace with brown rice when possible.',safe:false}
+    ],
+    fr: [
+      {icon:'🥗',name:'Poisson grillé + Légumes vapeur',kcal:310,tags:['IG Bas','Riche en protéines','Peu de glucides'],desc:"Protéines maigres avec des légumes riches en fibres. Excellent contrôle de la glycémie.",safe:true},
+      {icon:'🍲',name:'Ndolé (version allégée)',kcal:380,tags:['Traditionnel','Riche en fibres','IG Modéré'],desc:"Ragoût de feuilles amères riche en antioxydants. Utiliser moins d'huile de palme.",safe:true},
+      {icon:'🥜',name:'Soupe de haricots (sans sucre)',kcal:290,tags:['IG Bas','Riche en fibres','Rassasiant'],desc:'Les légumineuses sont idéales — libération lente des glucides et fibres élevées.',safe:true},
+      {icon:'🌿',name:'Moringa sauté + Oeufs',kcal:220,tags:['Superaliment','Peu de glucides','Anti-diabétique'],desc:'Les feuilles de moringa aident à réguler la glycémie. Idéal au petit-déjeuner.',safe:true},
+      {icon:'⚠️',name:'Riz blanc + Sauce',kcal:520,tags:['IG Élevé','Modéré'],desc:'Acceptable en petites portions. Remplacer par du riz brun si possible.',safe:false}
+    ]
+  };
+
+  function populateMeals() {
+    const meals = mealsData[lang];
+    document.getElementById('meals-list').innerHTML = meals.map(m=>`
+      <div class="rec-card">
+        <div class="rec-card-header">
+          <div class="rec-icon">${m.icon}</div>
+          <h3>${m.name}</h3>
+          <div class="rec-kcal">${m.kcal} kcal</div>
+        </div>
+        <div class="rec-card-body">
+          <p>${m.desc}</p>
+          <div class="tags">${m.tags.map(tag=>`<span class="tag ${m.safe?'':'warn'}">${tag}</span>`).join('')}</div>
+        </div>
+      </div>`).join('');
+  }
+</script>
+</body>
+</html>
